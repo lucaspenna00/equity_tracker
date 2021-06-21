@@ -46,7 +46,7 @@ class EquityResearch():
         df_balanco.rename({'Unnamed: 0':'descritivo'}, inplace=True, axis=1)
         df_balanco.rename({' ':'descritivo'}, inplace=True, axis=1)
         try:
-            p_l = df_balanco[df_balanco['descritivo'] == 'Patrimônio Líquido']['31/12/2020'].iloc[0]
+            p_l = df_balanco[df_balanco['descritivo'] == 'Patrimônio Líquido'][date_str].iloc[0]
             #p_l = df_balanco[df_balanco['descritivo'] == 'Patrimônio Líquido'].iloc[:,1].tolist()[0]
         except:
             p_l = None
