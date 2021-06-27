@@ -93,6 +93,8 @@ class EquityResearch():
             logging.warning(warning_msg)
             warnings.warn(warning_msg)
 
+        return net_revenue
+
 
     
     
