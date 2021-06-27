@@ -17,7 +17,7 @@ class EquityResearch():
         else:
             sheet_name="ALLCNPJ"
 
-        self.from_ticker_to_cnpj = pd.read_excel("input/from_ticker_to_cnpj.xlsx", sheet_name=sheet_name)
+        self._from_ticker_to_cnpj = pd.read_excel("input/from_ticker_to_cnpj.xlsx", sheet_name=sheet_name)
 
     def _transform_string(self, x):
         x = unidecode.unidecode(x)
@@ -26,10 +26,10 @@ class EquityResearch():
         return x
 
     def get_all_tickers(self):
-        return self.from_ticker_to_cnpj['security'].unique().tolist()
+        return self._from_ticker_to_cnpj['security'].unique().tolist()
 
     def get_cnpj_from_ticker(self, ticker):
-        cnpj = self.from_ticker_to_cnpj[self.from_ticker_to_cnpj['security'] == ticker]
+        cnpj = self._from_ticker_to_cnpj[self._from_ticker_to_cnpj['security'] == ticker]
         if cnpj.shape[0] > 0:
             cnpj = cnpj['CNPJ'].iloc[0]
         else:
@@ -38,7 +38,7 @@ class EquityResearch():
             raise Exception(error_msg)
         return cnpj
 
-    def get_net_revenue(self, ticker, date_arg):
+    def get_net_revenue(self, ticker, date_arg, log=True):
         cnpj = self.get_cnpj_from_ticker(ticker)
         filename=f"data/trimestral/{date_arg.year}/itr_cia_aberta_DRE_con_{date_arg.year}.csv"
         df = pd.read_csv(filename, encoding='iso-8859-1', sep=';') 
@@ -49,11 +49,16 @@ class EquityResearch():
         if cnpj in df['CNPJ_CIA'].tolist():
             df = df[df['CNPJ_CIA'] == cnpj]
             df = df[df['DT_REFER'] == str(date_arg)]
-            date_max_init_exer = df['DT_INI_EXERC'].max()
-            df = df[df['DT_INI_EXERC'] == date_max_init_exer]
+            df = df[df['DT_INI_EXERC'] == df['DT_INI_EXERC'].max()]
+
+            if log==True:
+                df.to_excel("log/"+ticker+"_dre.xlsx")
+
             df['DS_CONTA'] = df['DS_CONTA'].apply(lambda x: self._transform_string(x))
-                    
-            if ticker == 'BRAP4' or ticker == "BBSE3":
+
+            if ticker == 'B3SA3':
+                df = df[df['DS_CONTA'] == 'resultado bruto']
+            elif ticker == 'BRAP4' or ticker == "BBSE3":
                 df = df[df['DS_CONTA'] == 'resultado equivalencia patrimonial']
             elif ticker =="IRBR3":
                 df = df[df['DS_CONTA'] == 'receitas operacoes']
