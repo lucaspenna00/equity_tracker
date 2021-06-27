@@ -8,4 +8,4 @@ dia=int(input("[USER] Digite o dia: "))
 
 eqr = EquityResearch()
 eqr.get_DRE(ticker, date(ano,mes,dia))
-print("[INFO] File generated in log file. Enjoy it!")
+print("[INFO] CVM EXCEL File generated in log file. Enjoy it!")
