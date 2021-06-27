@@ -59,7 +59,6 @@ class EquityResearch():
         
         return df
 
-
     def get_net_revenue(self, ticker, date_arg):
 
         df = self.get_DRE(ticker, date_arg, log_enabled=False)
