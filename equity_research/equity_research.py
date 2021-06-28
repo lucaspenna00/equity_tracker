@@ -98,7 +98,7 @@ class EquityResearch():
         resultado_bruto = self._filt_df(df, ticker, date_arg, "CD_CONTA", "3.03", this_function_name, "resultado_bruto")
         return resultado_bruto
 
-    def get_book_value(self, ticker, date_arg):
+    def get_book_value(self, ticker: str, date_arg: date) -> float:
         cnpj = self.get_cnpj_from_ticker(ticker)
         filename=f"data/trimestral/2020/itr_cia_aberta_DMPL_ind_{date_arg.year}.csv"
         df = pd.read_csv(filename, sep=';', encoding='ISO-8859-1')
