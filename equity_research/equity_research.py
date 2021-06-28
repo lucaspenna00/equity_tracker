@@ -1,5 +1,5 @@
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, date
 import logging
 from pathlib import Path
 import unidecode
@@ -20,16 +20,17 @@ class EquityResearch():
 
         self._from_ticker_to_cnpj = pd.read_excel("input/from_ticker_to_cnpj.xlsx", sheet_name=sheet_name)
 
-    def _transform_string(self, x):
+    def _transform_string(self, x: str) -> str:
+        assert type(x) == str
         x = unidecode.unidecode(x)
         x = x.replace(" de "," ").replace(" da "," ").replace(" das ", " ").replace(" dos ", " ").replace(" do ", " ")
         x = x.lower()
         return x
 
-    def get_all_tickers(self):
+    def get_all_tickers(self) -> list:
         return self._from_ticker_to_cnpj['security'].unique().tolist()
 
-    def get_cnpj_from_ticker(self, ticker):
+    def get_cnpj_from_ticker(self, ticker: str) -> str:
         cnpj = self._from_ticker_to_cnpj[self._from_ticker_to_cnpj['security'] == ticker]
         if cnpj.shape[0] > 0:
             cnpj = cnpj['CNPJ'].iloc[0]
@@ -39,13 +40,16 @@ class EquityResearch():
             raise Exception(error_msg)
         return cnpj        
 
-    def get_DRE(self, ticker, date_arg, log_enabled=True):
+    def get_DRE(self, ticker: str, date_arg: date, log_enabled=True) -> pd.DataFrame():
         this_function_name = inspect.currentframe().f_code.co_name
         cnpj = self.get_cnpj_from_ticker(ticker)
-        filename=f"data/trimestral/{date_arg.year}/itr_cia_aberta_DRE_con_{date_arg.year}.csv"
-        df = pd.read_csv(filename, encoding='iso-8859-1', sep=';') 
-        filename=f"data/trimestral/{date_arg.year}/itr_cia_aberta_DRE_ind_{date_arg.year}.csv"
-        df_ind = pd.read_csv(filename, encoding='iso-8859-1', sep=';')
+        try:
+            filename=f"data/trimestral/{date_arg.year}/itr_cia_aberta_DRE_con_{date_arg.year}.csv"
+            df = pd.read_csv(filename, encoding='iso-8859-1', sep=';') 
+            filename=f"data/trimestral/{date_arg.year}/itr_cia_aberta_DRE_ind_{date_arg.year}.csv"
+            df_ind = pd.read_csv(filename, encoding='iso-8859-1', sep=';')
+        except:
+            raise Exception(f"[{this_function_name}] Data from year {date_arg.year} not found. Check if you have download the cvm data from {date_arg.year}.")
         df = df.append(df_ind)
 
         if cnpj in df['CNPJ_CIA'].tolist():
@@ -79,13 +83,13 @@ class EquityResearch():
             warnings.warn(warning_msg)
         return value_to_return   
 
-    def get_gross_revenue(self, ticker, date_arg):
+    def get_gross_revenue(self, ticker: str, date_arg: date) -> float:
         this_function_name = inspect.currentframe().f_code.co_name
         df = self.get_DRE(ticker, date_arg, log_enabled=False)
         gross_revenue = self._filt_df(df, ticker, date_arg, "CD_CONTA", "3.01", this_function_name, "gross_revenue")
         return gross_revenue   
 
-    def get_resultado_bruto(self, ticker, date_arg):
+    def get_resultado_bruto(self, ticker: str, date_arg: date) -> float:
         this_function_name = inspect.currentframe().f_code.co_name
         df = self.get_DRE(ticker, date_arg, log_enabled=False)
         resultado_bruto = self._filt_df(df, ticker, date_arg, "CD_CONTA", "3.03", this_function_name, "resultado_bruto")
