@@ -65,6 +65,9 @@ class EquityResearch():
         
         return df
 
+    def get_DMPL(self, ticker, date_arg, log_enabled=True) -> pd.DataFrame():
+        pass
+
     def _filt_df(self, df, ticker, date_arg, column_based, value_to_filt, func_name, name_value):
         if value_to_filt in df[column_based].tolist():
             df = df[df[column_based] == value_to_filt]
@@ -94,6 +97,21 @@ class EquityResearch():
         df = self.get_DRE(ticker, date_arg, log_enabled=False)
         resultado_bruto = self._filt_df(df, ticker, date_arg, "CD_CONTA", "3.03", this_function_name, "resultado_bruto")
         return resultado_bruto
+
+    def get_book_value(self, ticker, date_arg):
+        cnpj = self.get_cnpj_from_ticker(ticker)
+        filename=f"data/trimestral/2020/itr_cia_aberta_DMPL_ind_{date_arg.year}.csv"
+        df = pd.read_csv(filename, sep=';', encoding='ISO-8859-1')
+        df = df[df['CNPJ_CIA'] == cnpj]
+        df = df[df['DT_REFER'] == str(date_arg)]
+        df = df[df['DT_INI_EXERC'] == df['DT_INI_EXERC'].max()]
+        df['DS_CONTA'] = df['DS_CONTA'].apply(lambda x: self._transform_string(x))
+        df['COLUNA_DF'] = df['COLUNA_DF'].apply(lambda x: self._transform_string(x))
+        df['DS_CONTA'] = df['DS_CONTA'].apply(lambda x: x.replace("saldos", "saldo").replace("finais", "final"))
+        df = df[df['DS_CONTA'] == 'saldo final']
+        book_value = df['VL_CONTA'].iloc[-1]
+        return book_value
+
 
     
 
