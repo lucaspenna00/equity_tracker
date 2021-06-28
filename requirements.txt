@@ -1,0 +1,4 @@
+requests==2.25.1
+Unidecode==1.2.0
+pandas==1.2.4
+tqdm==4.59.0
