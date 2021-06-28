@@ -40,6 +40,7 @@ class EquityResearch():
         return cnpj        
 
     def get_DRE(self, ticker, date_arg, log_enabled=True):
+        this_function_name = inspect.currentframe().f_code.co_name
         cnpj = self.get_cnpj_from_ticker(ticker)
         filename=f"data/trimestral/{date_arg.year}/itr_cia_aberta_DRE_con_{date_arg.year}.csv"
         df = pd.read_csv(filename, encoding='iso-8859-1', sep=';') 
@@ -54,41 +55,43 @@ class EquityResearch():
             if log_enabled:
                 df.to_excel("log/"+ticker+"_dre.xlsx")
         else:
-            error_msg = f"[get_net_revenue] cnpj for {ticker} in {date_arg} not found."
+            error_msg = f"[{this_function_name}] cnpj for {ticker} in {date_arg} not found."
             logging.error(error_msg)
             raise Exception(error_msg)
         
         return df
 
-    def _filt_df(self, df, ticker, date_arg, column_based, value_to_filt, func_name):
+    def _filt_df(self, df, ticker, date_arg, column_based, value_to_filt, func_name, name_value):
         if value_to_filt in df[column_based].tolist():
             df = df[df[column_based] == value_to_filt]
         else:
-            error_msg = f"[{func_name}] gross revenue for {ticker} in {date_arg} not found."
+            error_msg = f"[{func_name}] {name_value} for {ticker} in {date_arg} not found."
             logging.error(error_msg)
             raise Exception(error_msg)
 
         df = df[df['VL_CONTA'] != 0.0]
         if df.shape[0] > 0:
-            gross_revenue = df['VL_CONTA'].iloc[0]
+            value_to_return = df['VL_CONTA'].iloc[0]
         else:
-            gross_revenue = 0.0
-            warning_msg = f"[{func_name}] gross_revenue is 0.0 for {ticker} in {date_arg}."
+            value_to_return = 0.0
+            warning_msg = f"[{func_name}] {name_value} is 0.0 for {ticker} in {date_arg}."
             logging.warning(warning_msg)
             warnings.warn(warning_msg)
-        return gross_revenue   
+        return value_to_return   
 
     def get_gross_revenue(self, ticker, date_arg):
         this_function_name = inspect.currentframe().f_code.co_name
         df = self.get_DRE(ticker, date_arg, log_enabled=False)
-        gross_revenue = self._filt_df(df, ticker, date_arg, "CD_CONTA", "3.01", this_function_name)
+        gross_revenue = self._filt_df(df, ticker, date_arg, "CD_CONTA", "3.01", this_function_name, "gross_revenue")
         return gross_revenue   
 
     def get_resultado_bruto(self, ticker, date_arg):
         this_function_name = inspect.currentframe().f_code.co_name
         df = self.get_DRE(ticker, date_arg, log_enabled=False)
-        resultado_bruto = self._filt_df(df, ticker, date_arg, "CD_CONTA", "3.03", this_function_name)
+        resultado_bruto = self._filt_df(df, ticker, date_arg, "CD_CONTA", "3.03", this_function_name, "resultado_bruto")
         return resultado_bruto
+
+    
 
     
 
