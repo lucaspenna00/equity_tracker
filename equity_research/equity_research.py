@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 import unidecode
 import warnings
+import inspect
 
 class EquityResearch():
 
@@ -36,7 +37,7 @@ class EquityResearch():
             error_msg = f"[get_cnpj_from_ticker] CPNJ for {ticker} not found. Verify the if the ticker passed as an argument is correct."
             logging.error(error_msg)
             raise Exception(error_msg)
-        return cnpj
+        return cnpj        
 
     def get_DRE(self, ticker, date_arg, log_enabled=True):
         cnpj = self.get_cnpj_from_ticker(ticker)
@@ -59,40 +60,39 @@ class EquityResearch():
         
         return df
 
-    def get_net_revenue(self, ticker, date_arg):
-
-        df = self.get_DRE(ticker, date_arg, log_enabled=False)
-
-        df['DS_CONTA'] = df['DS_CONTA'].apply(lambda x: self._transform_string(x))
-
-        if ticker == 'B3SA3':
-            df = df[df['DS_CONTA'] == 'resultado bruto']
-        elif ticker == 'BRAP4' or ticker == "BBSE3":
-            df = df[df['DS_CONTA'] == 'resultado equivalencia patrimonial']
-        elif ticker =="IRBR3":
-            df = df[df['DS_CONTA'] == 'receitas operacoes']
+    def _filt_df(self, df, ticker, date_arg, column_based, value_to_filt, func_name):
+        if value_to_filt in df[column_based].tolist():
+            df = df[df[column_based] == value_to_filt]
         else:
-            if 'receita venda bens e/ou servicos' in df['DS_CONTA'].tolist():
-                df = df[df['DS_CONTA'] == 'receita venda bens e/ou servicos']
-
-            elif 'resultado bruto intermediacao financeira' in df['DS_CONTA'].tolist():
-                df = df[df['DS_CONTA'] == 'resultado bruto intermediacao financeira']
-            else:
-                error_msg = f"[get_net_revenue] Net revenue for {ticker} in {date_arg} not found."
-                logging.error(error_msg)
-                raise Exception(error_msg)
+            error_msg = f"[{func_name}] gross revenue for {ticker} in {date_arg} not found."
+            logging.error(error_msg)
+            raise Exception(error_msg)
 
         df = df[df['VL_CONTA'] != 0.0]
-
         if df.shape[0] > 0:
-            net_revenue = df['VL_CONTA'].iloc[0]
+            gross_revenue = df['VL_CONTA'].iloc[0]
         else:
-            net_revenue = 0.0
-            warning_msg = f"[get_net_revenue] net revenue 0.0 for {ticker} in {date_arg}."
+            gross_revenue = 0.0
+            warning_msg = f"[{func_name}] gross_revenue is 0.0 for {ticker} in {date_arg}."
             logging.warning(warning_msg)
             warnings.warn(warning_msg)
+        return gross_revenue   
 
-        return net_revenue
+    def get_gross_revenue(self, ticker, date_arg):
+        this_function_name = inspect.currentframe().f_code.co_name
+        df = self.get_DRE(ticker, date_arg, log_enabled=False)
+        gross_revenue = self._filt_df(df, ticker, date_arg, "CD_CONTA", "3.01", this_function_name)
+        return gross_revenue   
+
+    def get_resultado_bruto(self, ticker, date_arg):
+        this_function_name = inspect.currentframe().f_code.co_name
+        df = self.get_DRE(ticker, date_arg, log_enabled=False)
+        resultado_bruto = self._filt_df(df, ticker, date_arg, "CD_CONTA", "3.03", this_function_name)
+        return resultado_bruto
+
+    
+
+    
 
 
     
