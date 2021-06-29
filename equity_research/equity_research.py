@@ -21,7 +21,6 @@ class EquityResearch():
         self._from_ticker_to_cnpj = pd.read_excel("input/from_ticker_to_cnpj.xlsx", sheet_name=sheet_name)
 
     def _transform_string(self, x: str) -> str:
-        assert type(x) == str
         x = unidecode.unidecode(x)
         x = x.replace(" de "," ").replace(" da "," ").replace(" das ", " ").replace(" dos ", " ").replace(" do ", " ")
         x = x.lower()
