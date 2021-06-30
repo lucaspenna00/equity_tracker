@@ -111,6 +111,10 @@ class EquityResearch():
         book_value = df['VL_CONTA'].iloc[-1]
         return book_value
 
+    def get_paid_dividends(self, ticker: str, date_arg: date) -> float:
+        #TODO
+        pass
+
 
     
 
