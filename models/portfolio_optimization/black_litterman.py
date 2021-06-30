@@ -26,7 +26,7 @@ class BlackLitterman():
         self.date_final = date_final
         self.iterations_history = pd.DataFrame(columns=list_of_stocks+["constant", "error", "sharpe"])
 
-    def _get_returns_matrix(self, list_of_stocks: list) -> pd.DataFrame():
+    def _get_returns_matrix(self, list_of_stocks: list) -> pd.DataFrame(): # implementar EWMA em cima da matriz de retornos como hiperparametro
         df_returns = pd.DataFrame()
         df_returns['date'] = yf.Ticker('PETR4'+".SA").history(period='max').reset_index()['date'].tolist()
         for stock in list_of_stocks:

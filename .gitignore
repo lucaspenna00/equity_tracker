@@ -132,4 +132,6 @@ data/
 
 log/
 
+test
+
 .ipynb_checkpoints
