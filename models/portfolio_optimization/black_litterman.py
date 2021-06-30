@@ -6,7 +6,7 @@ from tqdm import tqdm
 import warnings
 import inspect
 import logging
-
+from pathlib import Path
 
 class BlackLitterman():
 
