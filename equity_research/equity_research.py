@@ -26,6 +26,24 @@ class EquityResearch():
         x = x.lower()
         return x
 
+    def _filt_df(self, df, ticker, date_arg, column_based, value_to_filt, func_name, name_value):
+        if value_to_filt in df[column_based].tolist():
+            df = df[df[column_based] == value_to_filt]
+        else:
+            error_msg = f"[{func_name}] {name_value} for {ticker} in {date_arg} not found."
+            logging.error(error_msg)
+            raise Exception(error_msg)
+
+        df = df[df['VL_CONTA'] != 0.0]
+        if df.shape[0] > 0:
+            value_to_return = df['VL_CONTA'].iloc[0]
+        else:
+            value_to_return = 0.0
+            warning_msg = f"[{func_name}] {name_value} is 0.0 for {ticker} in {date_arg}."
+            logging.warning(warning_msg)
+            warnings.warn(warning_msg)
+        return value_to_return   
+
     def get_all_tickers(self) -> list:
         return self._from_ticker_to_cnpj['security'].unique().tolist()
 
@@ -66,24 +84,6 @@ class EquityResearch():
 
     def get_DMPL(self, ticker, date_arg, log_enabled=True) -> pd.DataFrame():
         pass
-
-    def _filt_df(self, df, ticker, date_arg, column_based, value_to_filt, func_name, name_value):
-        if value_to_filt in df[column_based].tolist():
-            df = df[df[column_based] == value_to_filt]
-        else:
-            error_msg = f"[{func_name}] {name_value} for {ticker} in {date_arg} not found."
-            logging.error(error_msg)
-            raise Exception(error_msg)
-
-        df = df[df['VL_CONTA'] != 0.0]
-        if df.shape[0] > 0:
-            value_to_return = df['VL_CONTA'].iloc[0]
-        else:
-            value_to_return = 0.0
-            warning_msg = f"[{func_name}] {name_value} is 0.0 for {ticker} in {date_arg}."
-            logging.warning(warning_msg)
-            warnings.warn(warning_msg)
-        return value_to_return   
 
     def get_gross_revenue(self, ticker: str, date_arg: date) -> float:
         this_function_name = inspect.currentframe().f_code.co_name
