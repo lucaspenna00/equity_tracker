@@ -98,17 +98,20 @@ class EquityResearch():
         return resultado_bruto
 
     def get_book_value(self, ticker: str, date_arg: date) -> float:
+        this_function_name = inspect.currentframe().f_code.co_name
         cnpj = self.get_cnpj_from_ticker(ticker)
-        filename=f"data/trimestral/2020/itr_cia_aberta_DMPL_ind_{date_arg.year}.csv"
+        filename=f"data/trimestral/2020/itr_cia_aberta_BPP_ind_{date_arg.year}.csv"
         df = pd.read_csv(filename, sep=';', encoding='ISO-8859-1')
         df = df[df['CNPJ_CIA'] == cnpj]
         df = df[df['DT_REFER'] == str(date_arg)]
-        df = df[df['DT_INI_EXERC'] == df['DT_INI_EXERC'].max()]
-        df['DS_CONTA'] = df['DS_CONTA'].apply(lambda x: self._transform_string(x))
-        df['COLUNA_DF'] = df['COLUNA_DF'].apply(lambda x: self._transform_string(x))
-        df['DS_CONTA'] = df['DS_CONTA'].apply(lambda x: x.replace("saldos", "saldo").replace("finais", "final"))
-        df = df[df['DS_CONTA'] == 'saldo final']
-        book_value = df['VL_CONTA'].iloc[-1]
+        df = df[df['DT_FIM_EXERC'] == str(df['DT_FIM_EXERC'].max())]
+        df = df[df['DS_CONTA'] == 'Patrimônio Líquido']
+        if df.shape[0] > 0:
+            book_value = df['VL_CONTA'].iloc[0]
+        else:
+            error_msg = f"[{this_function_name}] book value for {ticker} in {date_arg} not found."
+            logging.error(error_msg)
+            raise Exception(error_msg)
         return book_value
 
     def get_paid_dividends(self, ticker: str, date_arg: date) -> float:
