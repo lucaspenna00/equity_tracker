@@ -1,6 +1,7 @@
-pandas==1.2.4
-tqdm==4.59.0
-Unidecode==1.2.0
 numpy==1.20.1
+Unidecode==1.2.0
 requests==2.25.1
+pandas==1.2.4
+psutil==5.8.0
+tqdm==4.59.0
 yahooquery==2.2.15

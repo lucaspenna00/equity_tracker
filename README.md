@@ -1,6 +1,7 @@
 # equity_tracker
 
-Equities portfolio based on financial Machine Learning and Black Litterman optimization
+Equities portfolio based on financial Machine Learning and Black Litterman optimization.
+Not tested/improved for linux environments. We will do this.
 
 ## 1. First setup
 
