@@ -1,5 +1,6 @@
-# equitia
-A machine learning approach to mimic equity research analysis in brazilian market.
+# equity_tracker
+
+Equities portfolio based on financial Machine Learning and Black Litterman optimization
 
 ## 1. First setup
 
