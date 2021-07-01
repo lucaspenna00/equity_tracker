@@ -6,7 +6,7 @@ Equities portfolio based on financial Machine Learning and Black Litterman optim
 
 ### 1.1 Install dependences
 
-Open terminal/prompt and navigate to **equitia** directory, then run:
+Open terminal/prompt and navigate to **equity_tracker** directory, then run:
 
 `
 pip install -r requeriments.txt
@@ -18,5 +18,8 @@ The source of data is the CVM (SEC equivalent in brazilian market) repository. T
 There are plenty of fundamentalist data that we are using in this project, such as Income Statements, Cash Flows and Balance Sheets.
 Just ensure you have enough space to download the data (approximately 10GB free in hard disk).
 
+e.g.:
 
-
+`
+python run_download_data.py 2011 2020
+`
