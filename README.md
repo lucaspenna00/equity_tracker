@@ -24,7 +24,7 @@ cd equity_tracker
 Then, run:
 
 `
-pip install -r requeriments.txt
+pip install -r requirements.txt
 `
 
 ### 1.3 Download Data
