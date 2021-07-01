@@ -21,7 +21,7 @@ def download():
     if space_in_gb < NECESSARY_SPACE: 
         raise Exception(f"You don't have enough space. The repository needs approximately 10G to work properly. You have just {space_in_gb} GB free in your hard disk.")
     else:
-        answer = input(f"[INFO] Space is not a problem. You have {space_in_gb} in your hard disk. Do you want to proceed? [Y/n]")
+        answer = input(f"[INFO] Space is not a problem. You have {space_in_gb} in your hard disk. Do you want to proceed? [Y/n] ")
         if answer == "Y" or answer == "y":
             current_year = datetime.now().year
             if args.date_init < 2011:
