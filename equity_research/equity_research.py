@@ -22,11 +22,11 @@ class EquityResearch():
 
     def _transform_string(self, x: str) -> str:
         x = unidecode.unidecode(x)
-        x = x.replace(" de "," ").replace(" da "," ").replace(" das ", " ").replace(" dos ", " ").replace(" do ", " ")
+        x = x.replace(" de "," ").replace(" da "," ").replace(" das ", " ").replace(" dos ", " ").replace(" do ", " ").replace(" ou ", "/")
         x = x.lower()
         return x
 
-    def _filt_df(self, df, ticker, date_arg, column_based, value_to_filt, func_name, name_value):
+    def _filt_DRE_df(self, df, ticker, date_arg, column_based, value_to_filt, func_name, name_value):
         if value_to_filt in df[column_based].tolist():
             df = df[df[column_based] == value_to_filt]
         else:
@@ -67,12 +67,16 @@ class EquityResearch():
             df_ind = pd.read_csv(filename, encoding='iso-8859-1', sep=';')
         except:
             raise Exception(f"[{this_function_name}] Data from year {date_arg.year} not found. Check if you have download the cvm data from {date_arg.year}.")
+        
         df = df.append(df_ind)
 
         if cnpj in df['CNPJ_CIA'].tolist():
             df = df[df['CNPJ_CIA'] == cnpj]
             df = df[df['DT_REFER'] == str(date_arg)]
-            df = df[df['DT_INI_EXERC'] == df['DT_INI_EXERC'].max()]
+            df = df[df['VERSAO'] == df['VERSAO'].max()]
+            df = df[df['ORDEM_EXERC'] == 'ÚLTIMO']
+            df = df[df['DT_INI_EXERC'] == df['DT_INI_EXERC'].min()]
+            df = df[df['DT_FIM_EXERC'] == df['DT_FIM_EXERC'].max()]
             if log_enabled:
                 df.to_excel("log/"+ticker+"_dre.xlsx")
         else:
@@ -88,19 +92,27 @@ class EquityResearch():
     def get_gross_revenue(self, ticker: str, date_arg: date) -> float:
         this_function_name = inspect.currentframe().f_code.co_name
         df = self.get_DRE(ticker, date_arg, log_enabled=False)
-        gross_revenue = self._filt_df(df, ticker, date_arg, "CD_CONTA", "3.01", this_function_name, "gross_revenue")
+        gross_revenue = self._filt_DRE_df(df, ticker, date_arg, "CD_CONTA", "3.01", this_function_name, "gross_revenue")
         return gross_revenue   
 
     def get_resultado_bruto(self, ticker: str, date_arg: date) -> float:
         this_function_name = inspect.currentframe().f_code.co_name
         df = self.get_DRE(ticker, date_arg, log_enabled=False)
-        resultado_bruto = self._filt_df(df, ticker, date_arg, "CD_CONTA", "3.03", this_function_name, "resultado_bruto")
+        resultado_bruto = self._filt_DRE_df(df, ticker, date_arg, "CD_CONTA", "3.03", this_function_name, "resultado_bruto")
         return resultado_bruto
+
+    def get_net_profit(self, ticker: str, date_arg: date) -> float:
+        this_function_name = inspect.currentframe().f_code.co_name
+        df = self.get_DRE(ticker, date_arg, log_enabled=False)
+        df['DS_CONTA'] = df['DS_CONTA'].apply(self._transform_string)
+        df['DS_CONTA'] = df['DS_CONTA'].apply(lambda x: x.replace(" liquido ", " "))
+        net_profit = self._filt_DRE_df(df, ticker, date_arg, "DS_CONTA", "lucro/prejuizo periodo", this_function_name, "net profit")
+        return net_profit
 
     def get_book_value(self, ticker: str, date_arg: date) -> float:
         this_function_name = inspect.currentframe().f_code.co_name
         cnpj = self.get_cnpj_from_ticker(ticker)
-        filename=f"data/trimestral/2020/itr_cia_aberta_BPP_ind_{date_arg.year}.csv"
+        filename=f"data/trimestral/{date_arg.year}/itr_cia_aberta_BPP_ind_{date_arg.year}.csv"
         df = pd.read_csv(filename, sep=';', encoding='ISO-8859-1')
         df = df[df['CNPJ_CIA'] == cnpj]
         df = df[df['DT_REFER'] == str(date_arg)]
