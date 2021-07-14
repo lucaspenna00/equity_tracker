@@ -37,7 +37,7 @@ class GeneticPortfolio():
             self.live_fig.layout.yaxis.title = "Fitness (Sharpe Ratio)"
 
 
-    def real_time_plot(self):
+    def real_time_plot(self) -> "go.FigureWidget()":
         if self.live_plot:
             self.live_fig.add_scatter()
             return self.live_fig
