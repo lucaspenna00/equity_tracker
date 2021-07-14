@@ -4,12 +4,17 @@ import yahooquery as yf
 import matplotlib.pyplot as plt
 from datetime import date
 from tqdm import tqdm
+import plotly.graph_objects as go
 
 class GeneticPortfolio():
 
     # oassar retornos anualizados!
+
+    # ler sobre SORTINO RATIO
+
+    # add plots:efficient frontier
     
-    def __init__(self, stock_views: dict, start_date: date, end_date: date, population_size=1000, F=2, CR=0.2, N_iterations=1000):
+    def __init__(self, stock_views: dict, start_date: date, end_date: date, population_size=1000, F=2, CR=0.2, N_iterations=1000, live_plot=False):
 
         self.list_of_stocks = list(stock_views.keys())
         self.expected_returns = np.array(list(stock_views.values()))
@@ -23,7 +28,19 @@ class GeneticPortfolio():
         self.CR = CR
         self.N_iterations = N_iterations
         self.global_best_chromosome = None
+        self.live_plot = live_plot
 
+        if self.live_plot:
+            self.live_fig = go.FigureWidget()
+            self.live_fig.layout.title = 'Fitness Evolution along generations'
+            self.live_fig.layout.xaxis.title = "Generation"
+            self.live_fig.layout.yaxis.title = "Fitness (Sharpe Ratio)"
+
+
+    def real_time_plot(self):
+        if self.live_plot:
+            self.live_fig.add_scatter()
+            return self.live_fig
 
     def _get_portfolio_returns_matrix(self) -> "pd.DataFrame()": 
         df_returns = pd.DataFrame()
@@ -113,6 +130,7 @@ class GeneticPortfolio():
         max_fitness, best_chromosome = self._initialize_genetic_algo()
         max_fitness_array = np.array([])
         max_fitness_array =  np.append(max_fitness_array, max_fitness)
+        
         for i in tqdm(range(0, self.N_iterations)):
 
             intermediate_population = self._generate_population()
@@ -134,7 +152,11 @@ class GeneticPortfolio():
                     max_fitness = _aux_max_fitness
                     best_chromosome = _aux_best_chromosome
                 
-                max_fitness_array =  np.append(max_fitness_array, max_fitness)
+            max_fitness_array =  np.append(max_fitness_array, max_fitness)
+
+            if self.live_plot:
+                self.live_fig.data[0].y = max_fitness_array[:i]
+        
         self.fitness_array = max_fitness_array
         self.global_best_chromosome = best_chromosome
 
