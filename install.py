@@ -2,6 +2,7 @@ from download import download_data
 import argparse
 from datetime import datetime
 import psutil
+import simfin as sf
 
 NECESSARY_SPACE= 10 # in GB
 GB = 1000000000.0
@@ -11,7 +12,7 @@ parser.add_argument("date_init", help="date init for CVM data download", type=in
 parser.add_argument("date_final", help="date final for CVM data download", type=int)
 args = parser.parse_args()
 
-def download():
+def download_cvm():
 
     global NECESSARY_SPACE
     global GB
@@ -19,7 +20,7 @@ def download():
 
     space_in_gb = psutil.disk_usage(".").free/GB
     if space_in_gb < NECESSARY_SPACE: 
-        raise Exception(f"You don't have enough space. The repository needs approximately 10G to work properly. You have just {space_in_gb} GB free in your hard disk.")
+        raise Exception(f"You don't have enough space. This repository needs approximately 10G to work properly. You have just {space_in_gb} GB free in your hard disk.")
     else:
         answer = input(f"[INFO] Space is not a problem. You have {space_in_gb} in your hard disk. Do you want to proceed? [Y/n] ")
         if answer == "Y" or answer == "y":
@@ -27,7 +28,7 @@ def download():
             if args.date_init < 2011:
                 raise Exception("There is no CVM data before 2011.")
             elif args.date_final > current_year:
-                raise Exception(f"There is no CVM data after {current_year}")
+                raise Exception(f"There is no CVM data after {current_year}.")
             else:
                 print("[INFO] Downloading trimestral data from CVM...")
                 download_data.download_trimestral_data_from_cvm(args.date_init, args.date_final)
@@ -36,5 +37,16 @@ def download():
         else:
             print("[INFO] Operation canceled.")
 
-download()
+def setup_simfin():
+    answer = input(f"[INFO] SimFin version currently installed is: {sf.__version__}. Do you want to proceed? [Y/n]")
+    if answer == "Y" or answer == "y":
+        print("[INFO] Setting default data directory...")
+        sf.set_data_dir('data/us/')
+        print("[INFO] Setting default SimFin api_key to FREE...")
+        sf.set_api_key(api_key='free')
+    else:
+        print("[INFO] Operation canceled.")
 
+
+download_cvm()
+setup_simfin()

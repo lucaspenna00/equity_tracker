@@ -36,5 +36,5 @@ Just ensure you have enough space to download the data (approximately 10GB free 
 e.g.:
 
 `
-python run_download_data.py 2011 2020
+python install.py 2011 2021
 `
