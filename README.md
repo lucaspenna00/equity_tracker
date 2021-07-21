@@ -27,7 +27,7 @@ Then, run:
 pip install -r requirements.txt
 `
 
-### 1.3 Download Data
+### 1.3 SimFin setup and Download CVM Data
 
 The source of data is the CVM (SEC equivalent in brazilian market) data repository and SimFin API. The data can be obtained for free.
 There are plenty of fundamentalist data that we are using in this project, such as Income Statements, Cash Flows and Balance Sheets for br and US markets.
