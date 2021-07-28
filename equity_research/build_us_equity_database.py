@@ -96,6 +96,8 @@ class EquityResearchUS():
         print("[INFO] Saving DB equities...")
         db_equities_with_prices.to_csv(f"data/us/{self.name_to_save_DB}", index=False)
 
+        return db_equities_with_prices
+
     def get_equities_DB(self):
         if self.financial_statements_file != None:
             df = pd.read_csv(f"data/us/{self.financial_statements_file}")
