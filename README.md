@@ -1,5 +1,7 @@
 # equity_tracker
 
+Trabalho de Conclusão de Curso - Escola Politécnica da Universidade de São Paulo.
+
 Equities portfolio based on financial Machine Learning and Genetic Algorithm for Portfolio Optimization.
 Not tested/improved for linux environments. We will do this.
 
