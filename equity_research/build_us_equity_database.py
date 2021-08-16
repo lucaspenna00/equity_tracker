@@ -105,4 +105,91 @@ class EquityResearchUS():
             df = self._build_us_equities_db()
         return df
 
+    def _get_fiscal_date(self, row): 
+        if   row['Fiscal Period'] == 'Q1':
+            return date(row['Fiscal Year'], 3, 31)
+        elif row['Fiscal Period'] == 'Q2':
+            return date(row['Fiscal Year'], 6, 30)
+        elif row['Fiscal Period'] == 'Q3':
+            return date(row['Fiscal Year'], 9, 30)
+        elif row['Fiscal Period'] == 'Q4':
+            return date(row['Fiscal Year'], 12, 31)
+
+    def build_dataset(self):
+
+        df = pd.read_csv(f"../data/us/{self.name_to_save_DB}.csv")
+
+        dataset = pd.DataFrame()
+
+        dataset['Ticker'] = df['Ticker']
+
+        dataset['fiscal_date'] = df.apply(self._get_fiscal_date, axis=1)
+
+        # 1. Patrimonio Liquido / Book Value / Total Equity
+        dataset['total_equity'] = df['Total Equity']
+
+        # 2. Dividend Yield
+        dataset['dividend_yield'] = df['Dividends Paid'] / (df['Shares (Diluted)_x'] * df['price'])
+
+        # 3. Earning per Shares
+        dataset['earning_per_shares'] = df['Net Income'] / df['Shares (Diluted)_x']
+
+        # 4. Net Revenue / Gross Profit
+        dataset['gross_profit'] = df['Gross Profit']
+
+        # 5. Price to Earnings Ratio
+        dataset['price_to_earnings_ratio'] = df['price'] / df['earning_per_shares']
+
+        # 6. Price to Book Ratio
+        dataset['price_to_book_ratio'] = df['price'] / df['Total Equity']
+        
+        # 7. Price to Sales Ratio
+        dataset['price_to_sales_ratio'] = ( df['Shares (Diluted)_x'] * df['price'] ) / df['Revenue']
+
+        # 8. Dividends per Share
+        dataset['dividend_per_shares'] = df['Dividends Paid'] / df['Shares (Diluted)_x']
+
+        # 9. Current Ratio
+        dataset['current_ratio'] = df['Total Current Assets'] / df['Total Current Liabilities']
+
+        # 10. Quick Ratio
+        dataset['quick_ratio'] = ( df['Total Current Assets'] - df['Inventories'] ) / df['Total Current Liabilities']
+
+        # 11. Debt Equity Ratio
+        dataset['debt_equity_ratio'] = df['Total Current Liabilities'] / df['Total Equity']
+
+        # 12. Profit Margin
+        dataset['profit_margin'] = df['Net Income'] / df['Revenue']
+
+        # 13. Operating Margin
+        dataset['operating_margin'] = df['Operating Income (Loss)'] / df['Revenue']
+
+        # 14. Asset Turnover
+        dataset['asset_turnover'] = df['Revenue'] / df['Total Assets']
+
+        # 15. Return on Asset
+        dataset['return_on_asset'] = df['Net Income'] / df['Total Assets']
+        
+        # 16. Return on Equity
+        dataset['ROE'] = df['Net Income'] / df['Total Equity']
+
+        # 17. Price to Cash Flow Ratio
+        # TODO
+
+        # 18. Cash Ratio
+        dataset['CR'] = df['Cash, Cash Equivalents & Short Term Investments'] / df['Total Current Liabilities']
+
+        # 19. Enterprise Multiple
+        EV = (df['Shares (Diluted)_x'] * df['price']) + df['Total Liabilities'] - df['Cash, Cash Equivalents & Short Term Investments']
+        EBITDA = df['Gross Profit'] + df['Operating Expenses']
+        dataset['EM'] = EV/EBITDA
+
+        # 20. Long Term Debt to Total Assets
+        dataset['long_term_debt/total_assets'] = df['Long Term Debt'] / df['Total Assets']
+
+        # 21. Working Capital Ratio
+        dataset['WCR'] = df['Total Current Assets'] / df['Total Current Liabilities']
+
+        return dataset
+
 
