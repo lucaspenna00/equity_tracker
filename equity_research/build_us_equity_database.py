@@ -8,9 +8,10 @@ import logging
 from pathlib import Path
 import inspect
 import pickle
+import numpy as np
 
 class EquityResearchUS():
-    def __init__(self, prices_file=None, financial_statements_file=None, name_to_save_DB="equities_database"):
+    def __init__(self, prices_file=None, financial_statements_file=None, name_to_save_DB="equities_database.csv"):
         sf.set_data_dir('data/us')
         sf.set_api_key(api_key='free')
         p = Path("log")
@@ -25,13 +26,15 @@ class EquityResearchUS():
 
         if self.prices_file != None:
             print("[INFO] Loading Yahoo Prices data...")
-            file = open(f"data/us/{self.prices_file}.pickle",'rb')
+            file = open(f"data/us/{self.prices_file}",'rb')
             df_prices = pickle.load(file)
             file.close()
         else:
             print("[INFO] Downloading Yahoo Prices data...")
             tickers = yf.Ticker(stock_list)
             df_prices = tickers.history(period='max')
+            filehandler = open(f"data/us/default_yahoo_prices.pickle","wb")
+            pickle.dump(df_prices, filehandler)
 
         df_prices_fin = pd.DataFrame()
         print("[INFO] Buillding Yahoo DB prices...")
@@ -67,6 +70,7 @@ class EquityResearchUS():
 
         df_prices_fin = df_prices_fin.reset_index().rename({"index":"Publish Date", "security":"Ticker", 'adjclose':'price'}, axis=1)
         df_prices_fin = df_prices_fin[['Publish Date', 'Ticker','price']]
+        df_prices_fin['price_next_quarter'] = df_prices_fin['price'].shift(-66)
 
         df_income.drop(['SimFinId', 'Currency', 'Restated Date'], axis=1, inplace=True)
         df_balance.drop(['SimFinId', 'Currency', 'Restated Date'], axis=1, inplace=True)
@@ -115,81 +119,102 @@ class EquityResearchUS():
         elif row['Fiscal Period'] == 'Q4':
             return date(row['Fiscal Year'], 12, 31)
 
-    def build_dataset(self):
+    def build_feature_engineering(self):
 
-        df = pd.read_csv(f"../data/us/{self.name_to_save_DB}.csv")
+        df = self.get_equities_DB()
+        df = df.fillna(0)
 
         dataset = pd.DataFrame()
-
         dataset['Ticker'] = df['Ticker']
-
         dataset['fiscal_date'] = df.apply(self._get_fiscal_date, axis=1)
+        dataset['price'] = df['price']
+        dataset['price_next_quarter'] = df['price_next_quarter']
+
+        print("[INFO] Calculating primary features...")
 
         # 1. Patrimonio Liquido / Book Value / Total Equity
         dataset['total_equity'] = df['Total Equity']
-
         # 2. Dividend Yield
         dataset['dividend_yield'] = df['Dividends Paid'] / (df['Shares (Diluted)_x'] * df['price'])
-
         # 3. Earning per Shares
         dataset['earning_per_shares'] = df['Net Income'] / df['Shares (Diluted)_x']
-
         # 4. Net Revenue / Gross Profit
         dataset['gross_profit'] = df['Gross Profit']
-
         # 5. Price to Earnings Ratio
-        dataset['price_to_earnings_ratio'] = df['price'] / df['earning_per_shares']
-
+        dataset['price_to_earnings_ratio'] = df['price'] / ( df['Net Income'] / df['Shares (Diluted)_x'] )
         # 6. Price to Book Ratio
         dataset['price_to_book_ratio'] = df['price'] / df['Total Equity']
-        
         # 7. Price to Sales Ratio
         dataset['price_to_sales_ratio'] = ( df['Shares (Diluted)_x'] * df['price'] ) / df['Revenue']
-
         # 8. Dividends per Share
         dataset['dividend_per_shares'] = df['Dividends Paid'] / df['Shares (Diluted)_x']
-
         # 9. Current Ratio
         dataset['current_ratio'] = df['Total Current Assets'] / df['Total Current Liabilities']
-
         # 10. Quick Ratio
         dataset['quick_ratio'] = ( df['Total Current Assets'] - df['Inventories'] ) / df['Total Current Liabilities']
-
         # 11. Debt Equity Ratio
         dataset['debt_equity_ratio'] = df['Total Current Liabilities'] / df['Total Equity']
-
         # 12. Profit Margin
         dataset['profit_margin'] = df['Net Income'] / df['Revenue']
-
         # 13. Operating Margin
         dataset['operating_margin'] = df['Operating Income (Loss)'] / df['Revenue']
-
         # 14. Asset Turnover
         dataset['asset_turnover'] = df['Revenue'] / df['Total Assets']
-
         # 15. Return on Asset
         dataset['return_on_asset'] = df['Net Income'] / df['Total Assets']
-        
         # 16. Return on Equity
         dataset['ROE'] = df['Net Income'] / df['Total Equity']
-
         # 17. Price to Cash Flow Ratio
         # TODO
-
         # 18. Cash Ratio
         dataset['CR'] = df['Cash, Cash Equivalents & Short Term Investments'] / df['Total Current Liabilities']
-
         # 19. Enterprise Multiple
         EV = (df['Shares (Diluted)_x'] * df['price']) + df['Total Liabilities'] - df['Cash, Cash Equivalents & Short Term Investments']
         EBITDA = df['Gross Profit'] + df['Operating Expenses']
         dataset['EM'] = EV/EBITDA
-
         # 20. Long Term Debt to Total Assets
         dataset['long_term_debt/total_assets'] = df['Long Term Debt'] / df['Total Assets']
-
         # 21. Working Capital Ratio
         dataset['WCR'] = df['Total Current Assets'] / df['Total Current Liabilities']
 
         return dataset
 
+    def build_dataset(self):
+
+        dataset = self.build_feature_engineering()
+
+        tickers = dataset['Ticker'].unique().tolist()
+
+        list_df = []
+
+        print("[INFO] Calculating delta features...")
+
+        for ticker in tqdm(tickers):
+            df_filt = dataset[dataset['Ticker'] == ticker]
+            df_filt = df_filt.sort_values(by='fiscal_date')
+            
+            _returns = ((df_filt['price_next_quarter'] - df_filt['price'])/(df_filt['price'])).copy()
+            _ticker = df_filt['Ticker'].copy()
+            _fiscal_date = df_filt['fiscal_date'].copy()
+            
+            df_filt.drop(['Ticker', 'fiscal_date', 'price', 'price_next_quarter'], axis=1, inplace=True)
+            
+            df_filt = df_filt.pct_change()
+            df_filt = df_filt[1:]
+            df_filt = df_filt.fillna(0)
+            
+            df_filt['return'] = _returns
+            df_filt['Ticker'] = _ticker
+            df_filt['fiscal_date'] = _fiscal_date
+            
+            list_df.append(df_filt)
+
+        dataset = pd.concat(list_df)
+
+        dataset = dataset.dropna()
+
+        dataset = dataset.replace(np.inf, 0)
+        dataset = dataset.replace(-np.inf, 0)
+
+        return dataset
 
