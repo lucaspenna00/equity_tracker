@@ -9,6 +9,7 @@ from pathlib import Path
 import inspect
 import pickle
 import numpy as np
+import time
 
 class EquityResearchUS():
     def __init__(self, prices_file=None, financial_statements_file=None, name_to_save_DB="equities_database.csv"):
@@ -23,30 +24,29 @@ class EquityResearchUS():
 
     def _load_DB_prices(self, stock_list):
         func_name = inspect.currentframe().f_code.co_name
-
+        
         if self.prices_file != None:
-            print("[INFO] Loading Yahoo Prices data...")
-            file = open(f"data/us/{self.prices_file}",'rb')
-            df_prices = pickle.load(file)
-            file.close()
+            df_prices_fin = pd.read_csv(f"data/us/{self.prices_file}")
+            return df_prices_fin
+
         else:
             print("[INFO] Downloading Yahoo Prices data...")
-            tickers = yf.Ticker(stock_list)
-            df_prices = tickers.history(period='max')
-            filehandler = open(f"data/us/default_yahoo_prices.pickle","wb")
-            pickle.dump(df_prices, filehandler)
+            list_df=[]
+            for ticker in tqdm(stock_list):
+                try:
+                    df_prices = yf.Ticker(ticker).history(period='max').reset_index()
+                    df_prices['price_next_quarter'] = df_prices['adjclose'].shift(-60)
+                    list_df.append(df_prices)
+                except:
+                    error_msg = f"[{func_name}] {ticker} not found. May be deslisted or it doesn't exist."
+                    logging.error(error_msg)
+                    pass
 
-        df_prices_fin = pd.DataFrame()
-        print("[INFO] Buillding Yahoo DB prices...")
-        for ticker in stock_list:
-            try:
-                df_prices_aux = df_prices[ticker]
-                df_prices_aux['security'] = ticker
-                df_prices_fin = df_prices_fin.append(df_prices_aux)
-            except:
-                error_msg = f"[{func_name}] Daily prices database for {ticker} not found. May be deslisted."
-                logging.error(error_msg)
-                pass
+                time.sleep(np.random.randint(low=2, high=5))
+
+            df_prices_fin = pd.concat(list_df)
+            df_prices_fin.to_csv("default_yahoo_prices.csv", index=False)
+
         return df_prices_fin
 
 
@@ -68,9 +68,8 @@ class EquityResearchUS():
 
         df_prices_fin = self._load_DB_prices(stock_list)
 
-        df_prices_fin = df_prices_fin.reset_index().rename({"index":"Publish Date", "security":"Ticker", 'adjclose':'price'}, axis=1)
-        df_prices_fin = df_prices_fin[['Publish Date', 'Ticker','price']]
-        df_prices_fin['price_next_quarter'] = df_prices_fin['price'].shift(-66)
+        df_prices_fin = df_prices_fin.rename({"date":"Publish Date", "symbol":"Ticker", 'adjclose':'price'}, axis=1)
+        df_prices_fin = df_prices_fin[['Publish Date', 'Ticker','price','price_next_quarter']]
 
         df_income.drop(['SimFinId', 'Currency', 'Restated Date'], axis=1, inplace=True)
         df_balance.drop(['SimFinId', 'Currency', 'Restated Date'], axis=1, inplace=True)
