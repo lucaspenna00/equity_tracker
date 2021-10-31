@@ -14,14 +14,14 @@ class GeneticPortfolio():
 
     # add plots:efficient frontier
     
-    def __init__(self, stock_views: dict, start_date: date, end_date: date, population_size=1000, F=2, CR=0.2, N_iterations=1000, live_plot=False):
+    def __init__(self, stock_views: dict, start_date: date, end_date: date, population_size=1000, F=2, CR=0.2, N_iterations=1000, live_plot=False, K=60):
 
         self.list_of_stocks = list(stock_views.keys())
         self.expected_returns = np.array(list(stock_views.values()))
         self.start_date = start_date
         self.end_date = end_date
         self.return_matrix = self._get_portfolio_returns_matrix()
-        self.covariance_matrix = np.array(self.return_matrix.cov()*252)
+        self.covariance_matrix = np.array(self.return_matrix.cov()*K)
         self.number_of_gens = len(self.list_of_stocks)
         self.population_size = population_size
         self.F = F
@@ -43,18 +43,11 @@ class GeneticPortfolio():
             return self.live_fig
 
     def _get_portfolio_returns_matrix(self) -> "pd.DataFrame()": 
-        df_returns = pd.DataFrame()
-        df_returns['date'] = yf.Ticker('PETR4'+".SA").history(period='max').reset_index()['date'].tolist()
-        for stock in self.list_of_stocks:
-            stock_data = yf.Ticker(stock+".SA").history(period='max').reset_index()
-            stock_data['close_previous'] = stock_data['close'].shift(1)
-            stock_data[stock] = (stock_data['close'] - stock_data['close_previous'])/stock_data['close_previous']
-            stock_data = stock_data[['date',stock]]
-            df_returns = pd.merge(df_returns, stock_data, how='left', on='date')
-        
-        df_returns = df_returns.dropna()
+        df_returns = pd.read_csv("data/matrix_returns.csv", parse_dates=['date'])
+        df_returns['date'] = df_returns['date'].dt.date
+        df_returns = df_returns.fillna(0) #gambiarra
         df_returns = df_returns[(df_returns['date'] >= self.start_date) & (df_returns['date'] <= self.end_date)]
-        df_returns.drop(['date'], inplace=True, axis=1)
+        df_returns = df_returns[self.list_of_stocks]
         return df_returns
 
     def _portfolio_vol(self, chromosome: "np.array()") -> float:
@@ -165,12 +158,9 @@ class GeneticPortfolio():
         portfolio = dict(zip(self.list_of_stocks, self.global_best_chromosome))
         return portfolio
 
-
-    
-
-
-
-
+    @property
+    def covmat_shape(self) -> "np.array()":
+        return self.covariance_matrix.shape
 
 
 
