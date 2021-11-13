@@ -1,10 +1,10 @@
-plotly==4.14.3
-requests==2.25.1
-numpy==1.20.1
+numpy==1.19.5
 simfin==0.8.1
-psutil==5.8.0
-tqdm==4.59.0
 matplotlib==3.3.4
+tqdm==4.59.0
+requests==2.25.1
+plotly==4.14.3
+psutil==5.8.0
 pandas==1.2.4
 Unidecode==1.2.0
 yahooquery==2.2.15
