@@ -7,15 +7,7 @@ from tqdm import tqdm
 import plotly.graph_objects as go
 
 class GeneticPortfolio():
-
-    # oassar retornos anualizados!
-
-    # ler sobre SORTINO RATIO
-
-    # add plots:efficient frontier
-    
     def __init__(self, stock_views: dict, start_date: date, end_date: date, population_size=1000, F=2, CR=0.2, N_iterations=1000, live_plot=False, K=60):
-
         self.list_of_stocks = list(stock_views.keys())
         self.expected_returns = np.array(list(stock_views.values()))
         self.start_date = start_date
@@ -35,7 +27,18 @@ class GeneticPortfolio():
             self.live_fig.layout.title = 'Fitness Evolution along generations'
             self.live_fig.layout.xaxis.title = "Generation"
             self.live_fig.layout.yaxis.title = "Fitness (Sharpe Ratio)"
-
+        
+        # Litterman Factors
+        '''
+        mkt_weights = pd.read_excel("data/mktcap.xlsx")
+        self.market_cap_weights = mkt_weights[self.list_of_stocks]
+        self.tau = 1
+        self.delta = 1
+        self.uncertainty_matrix = np.random.normal(0, 1, (self.number_of_gens, self.number_of_gens))
+        self.link_matrix = np.diag(np.full(self.number_of_gens,1))
+        self.prior_expected_returns = self.delta*self.covariance_matrix @ self.market_cap_weights
+        self.views_vector = np.full(shape=self.number_of_gens, fill_value=0.05, dtype=float)
+        '''
 
     def real_time_plot(self) -> "go.FigureWidget()":
         if self.live_plot:
@@ -55,6 +58,12 @@ class GeneticPortfolio():
         return np.sqrt(var)
 
     def _portfolio_expected_return(self, chromosome: "np.array()") -> float:
+        '''
+        first_part = np.linalg.inv((np.linalg.inv(self.tau*self.covariance_matrix)+(np.transpose(self.link_matrix) @ self.uncertainty_matrix @ self.link_matrix)))
+        second_part = (np.linalg.inv(self.tau*self.covariance_matrix)@self.prior_expected_returns) + (np.transpose(self.link_matrix) @ self.uncertainty_matrix @ self.views_vector)
+        expected_excess_return_vector = first_part @ second_part
+        return expected_excess_return_vector @ chromosome
+        '''
         return self.expected_returns @ chromosome
 
     def _apply_restriction(self, chromosome: "np.array()") -> "np.array()":
@@ -152,6 +161,7 @@ class GeneticPortfolio():
         
         self.fitness_array = max_fitness_array
         self.global_best_chromosome = best_chromosome
+
 
     @property
     def best_portfolio(self) -> dict:
